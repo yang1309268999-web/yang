@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎂 生日惊喜抽奖</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #fff0f5, #ffd6e0);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 25px;
+        }
+        h1 {
+            color: #c83262;
+            font-size: 2.4rem;
+            margin: 20px 0;
+            text-shadow: 2px 2px 6px rgba(200,50,98,0.2);
+        }
+        .tip {
+            background: #ffffff;
+            padding: 14px 32px;
+            border-radius: 30px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+            color: #885a6d;
+            margin-bottom: 28px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 16px;
+            max-width: 1020px;
+            margin-bottom: 30px;
+        }
+        .grid-item {
+            width: 120px;
+            height: 120px;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 5px 16px rgba(200,50,98,0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .grid-item:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 10px 28px rgba(200,50,98,0.25);
+        }
+        .grid-item.opened {
+            background: linear-gradient(135deg, #ffb3c6, #ffccd9);
+            cursor: default;
+        }
+        .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #444;
+        }
+        .prize {
+            font-size: 0.85rem;
+            color: #b82e58;
+            font-weight: 600;
+            margin-top: 6px;
+            text-align: center;
+        }
+        .result-box {
+            background: #fff;
+            padding: 26px 45px;
+            border-radius: 22px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 620px;
+            margin-bottom: 22px;
+        }
+        .result-box h3 {
+            color: #c83262;
+            margin-bottom: 12px;
+            font-size: 1.4rem;
+        }
+        .result-box p {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+        .reset-btn {
+            background: linear-gradient(135deg, #c83262, #e04478);
+            color: #fff;
+            border: none;
+            padding: 13px 35px;
+            border-radius: 35px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .reset-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.92;
+        }
+        /* 摇晃动画 */
+        @keyframes shakeBox {
+            0%,100%{transform: rotate(0deg);}
+            20%{transform: rotate(-6deg);}
+            40%{transform: rotate(6deg);}
+            60%{transform: rotate(-4deg);}
+            80%{transform: rotate(4deg);}
+        }
+        .shake {
+            animation: shakeBox 0.6s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎂 生日快乐 专属惊喜抽奖</h1>
+    <div class="tip">点击数字格子，抽取专属生日礼物</div>
+
+    <div class="grid-container" id="lotteryGrid"></div>
+
+    <div class="result-box" id="resultBox">
+        <h3>🎁 开奖结果</h3>
+        <p id="resultText">点击格子开启惊喜</p>
+    </div>
+
+    <button class="reset-btn" onclick="resetGame()">重新抽奖</button>
+
+    <script>
+        const prizes = [
+            {id:1,prize:"糖",text:"恭喜中奖了 人生才开始，肯定要先甜开头，奖励糖果一份"},
+            {id:2,prize:"未中奖",text:"很遗憾未中奖，但是没关系，你的人生甜度，我来承包啦！"},
+            {id:3,prize:"现金",text:"恭喜中奖啦！幼儿园的小钱包，由我来给你装满零花钱～"},
+            {id:4,prize:"未中奖",text:"很遗憾未中奖，但是没关系，以后的零花钱都会有的"},
+            {id:5,prize:"发夹",text:"恭喜中奖啦！幼儿园的小刘海，就用这支发夹别住，把你的可爱也别住啦～"},
+            {id:6,prize:"玩偶",text:"恭喜中奖啦！小时候的玩偶我没陪你抱，现在我和它一起陪你长大～"},
+            {id:7,prize:"未中奖",text:"很遗憾未中奖，零食吃多了可不好"},
+            {id:8,prize:"水果",text:"恭喜中奖啦！小时候的健康水果，现在换我给你准备好"},
+            {id:9,prize:"未中奖",text:"很遗憾未中奖。没关系，水果和零食都会有的"},
+            {id:10,prize:"牛肉卷+牛奶",text:"恭喜中奖啦！长身体的年纪，营养必须拉满，以后我天天给你做！"},
+            {id:11,prize:"未中奖",text:"很遗憾未中奖，补过了，可不好"},
+            {id:12,prize:"短袖",text:"恭喜中奖啦！夏天来了，这件短袖替我陪你度过少年时光～"},
+            {id:13,prize:"未中奖",text:"很遗憾未中奖，以后你的所有短袖，都由我来帮你挑！"},
+            {id:14,prize:"彩票",text:"恭喜中奖啦！少年时的小幸运，现在我把更大的好运带给你！"},
+            {id:15,prize:"未中奖",text:"很遗憾未中奖，高中的压力我没陪你扛，现在我陪你轻松躺平！"},
+            {id:16,prize:"漂流+按摩一套",text:"恭喜中奖啦！高中刷题的疲惫，需要一场漂流和按摩来治愈！"},
+            {id:17,prize:"未中奖",text:"很遗憾未中奖，没关系，人生很长，慢慢走"},
+            {id:18,prize:"花",text:"恭喜中奖啦！最美好的年龄，肯定要有一束漂亮的花呀"},
+            {id:19,prize:"未中奖",text:"没抽到奖品也无妨，往后余生我都会陪着你"},
+            {id:20,prize:"包",text:"恭喜中奖啦，青春时光，搭配好看包包元气满满"},
+            {id:21,prize:"现金",text:"恭喜中奖啦，步入社会，现金给予满满安全感"},
+            {id:22,prize:"口红",text:"恭喜中奖啦！职场通勤的气场，就由这支口红帮你稳住"},
+            {id:23,prize:"未中奖",text:"很遗憾未中奖，你的安全感，我会用一辈子来守护"},
+            {id:24,prize:"乐刻月卡",text:"恭喜中奖啦，闲暇运动放松身心，享受惬意生活"},
+            {id:25,prize:"未中奖",text:"很遗憾未中奖，安稳躺平也是幸福日常"},
+            {id:26,prize:"蛋糕",text:"恭喜中奖啦！生日时刻，甜蜜蛋糕必不可少"}
+        ];
+
+        const grid = document.getElementById('lotteryGrid');
+        const resultText = document.getElementById('resultText');
+        let openedIds = new Set();
+
+        function renderGrid(){
+            grid.innerHTML = '';
+            prizes.forEach(item=>{
+                const div = document.createElement('div');
+                div.className = 'grid-item';
+                div.dataset.id = item.id;
+                div.innerHTML = `<div class="number">${item.id}</div>`;
+                div.onclick = ()=>openBox(item,div);
+                grid.appendChild(div);
+            })
+        }
+
+        function openBox(item,el){
+            if(openedIds.has(item.id))return;
+            el.classList.add('shake');
+            setTimeout(()=>{
+                el.classList.remove('shake');
+                el.classList.add('opened');
+                el.innerHTML = `<div class="number">${item.id}</div><div class="prize">${item.prize}</div>`;
+            },600);
+            resultText.innerText = item.text;
+            openedIds.add(item.id);
+        }
+
+        function resetGame(){
+            openedIds.clear();
+            renderGrid();
+            resultText.innerText = '点击格子开启惊喜';
+        }
+        renderGrid();
+    </script>
+</body>
+</html>
